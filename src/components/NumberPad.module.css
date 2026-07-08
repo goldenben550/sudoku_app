@@ -1,0 +1,27 @@
+.pad {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4rem;
+  width: min(90vw, 540px);
+}
+
+.key {
+  padding: 0.6rem 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-button-bg);
+  color: var(--color-button-text);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.key:hover {
+  background: var(--color-highlight-peer);
+}
+
+.erase {
+  font-weight: 500;
+  font-size: 0.85rem;
+}
