@@ -15,16 +15,12 @@ export function Sidebar() {
         Check puzzle
       </button>
 
-      <button className={styles.button} onClick={() => dispatch({ type: 'AUTOFILL_FROM_NOTES' })}>
-        Autofill from notes
-      </button>
-
       <label className={styles.smartNotesRow}>
         Smart notes
         <input
           type="checkbox"
-          checked={state.smartNotes}
-          onChange={() => dispatch({ type: 'TOGGLE_SMART_NOTES' })}
+          checked={state.notesVariant === 'smart'}
+          onChange={() => dispatch({ type: 'TOGGLE_NOTES_VARIANT' })}
         />
       </label>
     </div>

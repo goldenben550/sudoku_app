@@ -6,11 +6,16 @@ export type InputMode = 'value' | 'notes'
 
 export type CellKind = 'given' | 'entered' | 'empty'
 
+/** Which notes bitmask is currently shown/edited for empty cells. */
+export type NotesVariant = 'manual' | 'smart'
+
 export interface CellState {
   kind: CellKind
   value: Digit | null
-  /** Bitmask of pencil-marked candidates; bit `d` (1<<d) set means digit d is noted. */
-  notes: number
+  /** Bitmask of pencil marks the player entered by hand; bit `d` (1<<d) set means digit d is noted. */
+  manualNotes: number
+  /** Bitmask of the "smart" notes layer — seeded with computed candidates, then freely editable. */
+  smartNotes: number
   isError: boolean
 }
 
@@ -26,11 +31,11 @@ export interface GameState {
   difficulty: Difficulty
   mode: InputMode
   selectedCell: number | null
-  smartNotes: boolean
+  notesVariant: NotesVariant
   isComplete: boolean
 }
 
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export interface PersistedGame {
   version: number
@@ -39,7 +44,7 @@ export interface PersistedGame {
   difficulty: Difficulty
   mode: InputMode
   selectedCell: number | null
-  smartNotes: boolean
+  notesVariant: NotesVariant
   isComplete: boolean
   savedAt: number
 }

@@ -1,8 +1,8 @@
 import { generatePuzzle } from '../sudoku/generator'
-import { clearNote, singleNoteDigit, toggleNote } from '../sudoku/notes'
-import type { Board, Difficulty, Digit, GameState, InputMode } from '../sudoku/types'
+import { initializeSmartNotes, toggleNote } from '../sudoku/notes'
+import type { Difficulty, Digit, GameState, InputMode } from '../sudoku/types'
 import { checkBoard, isBoardComplete } from '../sudoku/validation'
-import { getPeers, indexToRowCol, rowColToIndex } from '../utils/grid'
+import { indexToRowCol, rowColToIndex } from '../utils/grid'
 
 export type GameAction =
   | { type: 'SELECT_CELL'; index: number }
@@ -12,8 +12,7 @@ export type GameAction =
   | { type: 'ENTER_DIGIT'; digit: Digit }
   | { type: 'CLEAR_CELL' }
   | { type: 'CHECK' }
-  | { type: 'AUTOFILL_FROM_NOTES' }
-  | { type: 'TOGGLE_SMART_NOTES' }
+  | { type: 'TOGGLE_NOTES_VARIANT' }
   | { type: 'NEW_PUZZLE'; difficulty: Difficulty }
   | { type: 'LOAD_STATE'; state: GameState }
 
@@ -25,7 +24,7 @@ export function createInitialState(difficulty: Difficulty): GameState {
     difficulty,
     mode: 'value',
     selectedCell: null,
-    smartNotes: false,
+    notesVariant: 'manual',
     isComplete: false,
   }
 }
@@ -40,27 +39,25 @@ function enterDigit(state: GameState, digit: Digit): GameState {
   const cell = state.board[selectedCell]
   if (cell.kind === 'given') return state
 
-  const board = state.board.slice()
-
-  if (state.mode === 'value') {
-    board[selectedCell] = { kind: 'entered', value: digit, notes: 0, isError: false }
-    if (state.smartNotes) {
-      for (const peer of getPeers(selectedCell)) {
-        const peerCell = board[peer]
-        if (peerCell.notes !== 0) {
-          board[peer] = { ...peerCell, notes: clearNote(peerCell.notes, digit) }
-        }
-      }
-    }
-  } else {
-    // Notes mode: typing a note on a valued cell reverts it to notes-only first.
-    const baseNotes = cell.kind === 'entered' ? 0 : cell.notes
+  if (state.mode === 'notes') {
+    const noteKey = state.notesVariant === 'smart' ? 'smartNotes' : 'manualNotes'
+    const board = state.board.slice()
     board[selectedCell] = {
+      ...cell,
       kind: 'empty',
       value: null,
-      notes: toggleNote(baseNotes, digit),
-      isError: false,
+      [noteKey]: toggleNote(cell[noteKey], digit),
     }
+    return { ...state, board, isComplete: isBoardComplete(board, state.solution) }
+  }
+
+  const board = state.board.slice()
+  board[selectedCell] = {
+    kind: 'entered',
+    value: digit,
+    manualNotes: 0,
+    smartNotes: 0,
+    isError: false,
   }
 
   const isComplete = isBoardComplete(board, state.solution)
@@ -73,8 +70,11 @@ function clearCell(state: GameState): GameState {
   const cell = state.board[selectedCell]
   if (cell.kind === 'given') return state
 
-  const board = state.board.slice()
-  board[selectedCell] = { kind: 'empty', value: null, notes: 0, isError: false }
+  let board = state.board.slice()
+  board[selectedCell] = { kind: 'empty', value: null, manualNotes: 0, smartNotes: 0, isError: false }
+  if (state.notesVariant === 'smart') {
+    board = initializeSmartNotes(board)
+  }
   return { ...state, board, isComplete: false }
 }
 
@@ -92,15 +92,10 @@ function check(state: GameState): GameState {
   return { ...state, board, isComplete }
 }
 
-function autofillFromNotes(state: GameState): GameState {
-  const board: Board = state.board.map((cell) => {
-    if (cell.kind !== 'empty' || cell.notes === 0) return cell
-    const digit = singleNoteDigit(cell.notes)
-    if (digit === null) return cell
-    return { kind: 'entered', value: digit, notes: 0, isError: false }
-  })
-  const isComplete = isBoardComplete(board, state.solution)
-  return { ...state, board, isComplete }
+function toggleNotesVariant(state: GameState): GameState {
+  const notesVariant = state.notesVariant === 'smart' ? 'manual' : 'smart'
+  const board = notesVariant === 'smart' ? initializeSmartNotes(state.board) : state.board
+  return { ...state, notesVariant, board }
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -119,10 +114,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return clearCell(state)
     case 'CHECK':
       return check(state)
-    case 'AUTOFILL_FROM_NOTES':
-      return autofillFromNotes(state)
-    case 'TOGGLE_SMART_NOTES':
-      return { ...state, smartNotes: !state.smartNotes }
+    case 'TOGGLE_NOTES_VARIANT':
+      return toggleNotesVariant(state)
     case 'NEW_PUZZLE':
       return createInitialState(action.difficulty)
     case 'LOAD_STATE':

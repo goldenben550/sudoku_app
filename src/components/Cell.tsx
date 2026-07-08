@@ -4,22 +4,34 @@ import styles from './Cell.module.css'
 
 interface CellProps {
   cell: CellState
+  notes: number
   row: number
   col: number
   isSelected: boolean
   isPeer: boolean
   isSameNumber: boolean
+  isError: boolean
   onSelect: () => void
 }
 
-export function Cell({ cell, row, col, isSelected, isPeer, isSameNumber, onSelect }: CellProps) {
+export function Cell({
+  cell,
+  notes,
+  row,
+  col,
+  isSelected,
+  isPeer,
+  isSameNumber,
+  isError,
+  onSelect,
+}: CellProps) {
   const classNames = [styles.cell]
   if (col % 3 === 2 && col !== 8) classNames.push(styles.boxRight)
   if (row % 3 === 2 && row !== 8) classNames.push(styles.boxBottom)
   if (isPeer) classNames.push(styles.peer)
   if (isSameNumber) classNames.push(styles.sameNumber)
   if (isSelected) classNames.push(styles.selected)
-  if (cell.isError) classNames.push(styles.error)
+  if (isError) classNames.push(styles.error)
 
   return (
     <div className={classNames.join(' ')} onClick={onSelect}>
@@ -27,9 +39,9 @@ export function Cell({ cell, row, col, isSelected, isPeer, isSameNumber, onSelec
         <span className={cell.kind === 'given' ? styles.given : styles.entered}>
           {cell.value}
         </span>
-      ) : cell.notes !== 0 ? (
+      ) : notes !== 0 ? (
         <div className={styles.notes}>
-          {getNoteDigits(cell.notes).map((digit) => (
+          {getNoteDigits(notes).map((digit) => (
             <span key={digit} className={styles.note} style={{ gridArea: noteArea(digit) }}>
               {digit}
             </span>

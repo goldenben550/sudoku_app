@@ -11,7 +11,7 @@ export function saveGame(state: GameState): void {
     difficulty: state.difficulty,
     mode: state.mode,
     selectedCell: state.selectedCell,
-    smartNotes: state.smartNotes,
+    notesVariant: state.notesVariant,
     isComplete: state.isComplete,
     savedAt: Date.now(),
   }
@@ -37,7 +37,7 @@ export function loadGame(): GameState | null {
       difficulty: parsed.difficulty,
       mode: parsed.mode,
       selectedCell: parsed.selectedCell,
-      smartNotes: parsed.smartNotes,
+      notesVariant: parsed.notesVariant,
       isComplete: parsed.isComplete,
     }
   } catch {

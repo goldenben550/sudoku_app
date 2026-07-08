@@ -35,7 +35,8 @@ export function generatePuzzle(difficulty: Difficulty): GeneratedPuzzle {
   const board: Board = working.map((value): CellState => ({
     kind: value !== 0 ? 'given' : 'empty',
     value: value !== 0 ? (value as Digit) : null,
-    notes: 0,
+    manualNotes: 0,
+    smartNotes: 0,
     isError: false,
   }))
 

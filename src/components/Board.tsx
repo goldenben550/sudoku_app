@@ -1,17 +1,20 @@
 import { useMemo } from 'react'
 import { useGame } from '../state/gameContext'
+import { findConflictingCells } from '../sudoku/validation'
 import { getPeers, indexToRowCol } from '../utils/grid'
 import { Cell } from './Cell'
 import styles from './Board.module.css'
 
 export function Board() {
   const { state, dispatch } = useGame()
-  const { board, selectedCell } = state
+  const { board, selectedCell, notesVariant } = state
 
   const peerSet = useMemo(
     () => new Set(selectedCell !== null ? getPeers(selectedCell) : []),
     [selectedCell],
   )
+
+  const conflicts = useMemo(() => findConflictingCells(board), [board])
 
   const selectedValue = selectedCell !== null ? board[selectedCell].value : null
 
@@ -23,6 +26,7 @@ export function Board() {
           <Cell
             key={index}
             cell={cell}
+            notes={notesVariant === 'smart' ? cell.smartNotes : cell.manualNotes}
             row={row}
             col={col}
             isSelected={index === selectedCell}
@@ -30,6 +34,7 @@ export function Board() {
             isSameNumber={
               selectedValue !== null && index !== selectedCell && cell.value === selectedValue
             }
+            isError={cell.isError || conflicts.has(index)}
             onSelect={() => dispatch({ type: 'SELECT_CELL', index })}
           />
         )
