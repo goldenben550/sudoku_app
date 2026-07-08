@@ -11,6 +11,10 @@ export function toggleNote(notes: number, digit: Digit): number {
   return notes ^ bit(digit)
 }
 
+export function clearNote(notes: number, digit: Digit): number {
+  return notes & ~bit(digit)
+}
+
 export function getNoteDigits(notes: number): Digit[] {
   const digits: Digit[] = []
   for (let d = 1; d <= 9; d++) {
@@ -43,4 +47,33 @@ export function initializeSmartNotes(board: Board): Board {
     if (cell.kind !== 'empty' || cell.smartNotes !== 0) return cell
     return { ...cell, smartNotes: candidateMask(board, index) }
   })
+}
+
+/** Removes `digit` from the smart notes of every peer of `index` that has it noted. */
+export function stripSmartCandidateFromPeers(board: Board, index: number, digit: Digit): Board {
+  const next = board.slice()
+  for (const peer of getPeers(index)) {
+    const peerCell = next[peer]
+    if (hasNote(peerCell.smartNotes, digit)) {
+      next[peer] = { ...peerCell, smartNotes: clearNote(peerCell.smartNotes, digit) }
+    }
+  }
+  return next
+}
+
+/**
+ * Re-adds `digit` to a peer's smart notes if it's a valid candidate there again
+ * (no other peer of that cell still holds it) and isn't already noted.
+ */
+export function restoreSmartCandidateToPeers(board: Board, index: number, digit: Digit): Board {
+  const next = board.slice()
+  for (const peer of getPeers(index)) {
+    const peerCell = next[peer]
+    if (peerCell.kind !== 'empty' || hasNote(peerCell.smartNotes, digit)) continue
+    const stillBlocked = getPeers(peer).some((p) => next[p].value === digit)
+    if (!stillBlocked) {
+      next[peer] = { ...peerCell, smartNotes: peerCell.smartNotes | bit(digit) }
+    }
+  }
+  return next
 }

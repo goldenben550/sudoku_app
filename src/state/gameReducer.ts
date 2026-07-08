@@ -1,5 +1,10 @@
 import { generatePuzzle } from '../sudoku/generator'
-import { initializeSmartNotes, toggleNote } from '../sudoku/notes'
+import {
+  initializeSmartNotes,
+  restoreSmartCandidateToPeers,
+  stripSmartCandidateFromPeers,
+  toggleNote,
+} from '../sudoku/notes'
 import type { Difficulty, Digit, GameState, InputMode } from '../sudoku/types'
 import { checkBoard, isBoardComplete } from '../sudoku/validation'
 import { indexToRowCol, rowColToIndex } from '../utils/grid'
@@ -59,9 +64,10 @@ function enterDigit(state: GameState, digit: Digit): GameState {
     smartNotes: 0,
     isError: false,
   }
+  const boardWithUpdatedCandidates = stripSmartCandidateFromPeers(board, selectedCell, digit)
 
-  const isComplete = isBoardComplete(board, state.solution)
-  return { ...state, board, isComplete }
+  const isComplete = isBoardComplete(boardWithUpdatedCandidates, state.solution)
+  return { ...state, board: boardWithUpdatedCandidates, isComplete }
 }
 
 function clearCell(state: GameState): GameState {
@@ -72,6 +78,9 @@ function clearCell(state: GameState): GameState {
 
   let board = state.board.slice()
   board[selectedCell] = { kind: 'empty', value: null, manualNotes: 0, smartNotes: 0, isError: false }
+  if (cell.kind === 'entered' && cell.value !== null) {
+    board = restoreSmartCandidateToPeers(board, selectedCell, cell.value)
+  }
   if (state.notesVariant === 'smart') {
     board = initializeSmartNotes(board)
   }
